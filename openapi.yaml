@@ -1,0 +1,351 @@
+openapi: 3.1.0
+info:
+  title: Bot Mugshots Public API
+  version: 1.0.0
+  description: |
+    Keyless read-only API for deterministic mugshot SVGs and lineup data (packs: **bots**, **animals**, **aliens**).
+    Generator contract version **v1** is frozen; always pass `v=1` in production.
+    Human-readable reference: [API.md](https://mugshots.bot/api/API.md) (also served at `/api/API.md`).
+  license:
+    name: Bot Mugshots Terms of Use
+    url: https://mugshots.bot/terms.html
+servers:
+  - url: https://mugshots.bot
+    description: Production (via Caddy `/api/*` reverse proxy)
+paths:
+  /api:
+    get:
+      operationId: apiIndex
+      summary: API catalog
+      responses:
+        "200":
+          description: Links to health, OpenAPI, and documentation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiIndex"
+  /api/health:
+    get:
+      operationId: health
+      summary: Liveness and supported generator versions
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Mugshot-Version:
+              $ref: "#/components/headers/XMugshotVersion"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /api/openapi.yaml:
+    get:
+      operationId: openApiSpec
+      summary: This OpenAPI document
+      responses:
+        "200":
+          description: OpenAPI 3.1 YAML
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /api/portrait:
+    get:
+      operationId: portrait
+      summary: One portrait as SVG (bots, animals, or aliens pack)
+      parameters:
+        - $ref: "#/components/parameters/v"
+        - $ref: "#/components/parameters/pack"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/i"
+        - $ref: "#/components/parameters/size"
+        - $ref: "#/components/parameters/ink"
+        - $ref: "#/components/parameters/fill"
+        - $ref: "#/components/parameters/pal"
+        - $ref: "#/components/parameters/line"
+        - $ref: "#/components/parameters/bg"
+        - $ref: "#/components/parameters/animate"
+      responses:
+        "200":
+          description: SVG portrait (static by default; SMIL when `animate=1`)
+          headers:
+            X-Mugshot-Version:
+              $ref: "#/components/headers/XMugshotVersion"
+            X-Mugshot-Animate:
+              $ref: "#/components/headers/XMugshotAnimate"
+            ETag:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        "304":
+          description: Not modified (If-None-Match)
+        "400":
+          $ref: "#/components/responses/BadVersion"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/lineup:
+    get:
+      operationId: lineupJson
+      summary: JSON index of 100 subjects (traits + rap sheets)
+      parameters:
+        - $ref: "#/components/parameters/v"
+        - $ref: "#/components/parameters/pack"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/ink"
+        - $ref: "#/components/parameters/fill"
+        - $ref: "#/components/parameters/pal"
+        - $ref: "#/components/parameters/line"
+        - $ref: "#/components/parameters/bg"
+      responses:
+        "200":
+          description: Lineup index
+          headers:
+            X-Mugshot-Version:
+              $ref: "#/components/headers/XMugshotVersion"
+            ETag:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineupIndex"
+        "304":
+          description: Not modified
+        "400":
+          $ref: "#/components/responses/BadVersion"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/lineup.svg:
+    get:
+      operationId: lineupSvg
+      summary: Contact-sheet SVG of all 100 subjects
+      parameters:
+        - $ref: "#/components/parameters/v"
+        - $ref: "#/components/parameters/pack"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/ink"
+        - $ref: "#/components/parameters/fill"
+        - $ref: "#/components/parameters/pal"
+        - $ref: "#/components/parameters/line"
+        - $ref: "#/components/parameters/bg"
+      responses:
+        "200":
+          description: Static SVG sheet
+          headers:
+            X-Mugshot-Version:
+              $ref: "#/components/headers/XMugshotVersion"
+            ETag:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        "304":
+          description: Not modified
+        "400":
+          $ref: "#/components/responses/BadVersion"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+components:
+  headers:
+    XMugshotVersion:
+      description: Frozen generator contract version (currently `1`). Matches `v=` when provided.
+      schema:
+        type: integer
+        enum: [1]
+    XMugshotAnimate:
+      description: Present when `animate=1`; SMIL animation contract version (currently `1`). Omitted for static SVG.
+      schema:
+        type: integer
+        enum: [1]
+  parameters:
+    v:
+      name: v
+      in: query
+      description: API/generator version. **v1 is frozen**; unsupported values return 400.
+      schema:
+        type: integer
+        enum: [1]
+        default: 1
+    pack:
+      name: pack
+      in: query
+      description: Portrait pack. Omit or `bots` for frozen bot v1 output; `animals` or `aliens` for other mugshot sets.
+      schema:
+        type: string
+        enum: [bots, animals, aliens]
+        default: bots
+    roll:
+      name: roll
+      in: query
+      description: Alias for `name` (site handoff label).
+      schema:
+        type: string
+        maxLength: 12
+    index:
+      name: index
+      in: query
+      description: Alias for `i` (site handoff label).
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 99
+    name:
+      name: name
+      in: query
+      description: Roll name. Aliases `seed`, `roll`. Normalized to uppercase A–Z and 0–9, max 12 chars.
+      schema:
+        type: string
+        maxLength: 12
+        default: BOTANO
+    i:
+      name: i
+      in: query
+      description: Subject index in the lineup (0–99). Alias `index`.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 99
+        default: 0
+    size:
+      name: size
+      in: query
+      description: Portrait width/height in pixels.
+      schema:
+        type: integer
+        minimum: 64
+        maximum: 2048
+        default: 512
+    ink:
+      name: ink
+      in: query
+      description: Ink palette key (`paper` maps to chalk paper tone).
+      schema:
+        type: string
+        enum: [ink, chalk, blueprint, sodium, paper]
+        default: chalk
+    fill:
+      name: fill
+      in: query
+      description: Fill mode.
+      schema:
+        type: string
+        enum: [sticker, outline]
+        default: sticker
+    pal:
+      name: pal
+      in: query
+      description: Sticker fill palette.
+      schema:
+        type: string
+        enum: [candy, ocean, retro, pastel]
+        default: candy
+    line:
+      name: line
+      in: query
+      description: Stroke weight (outline width).
+      schema:
+        type: number
+        default: 1.25
+    bg:
+      name: bg
+      in: query
+      description: Export background (`none` = transparent SVG).
+      schema:
+        type: string
+        enum: [none, transparent, paper, chalk, light, ink, blueprint, sodium]
+        default: none
+  responses:
+    BadVersion:
+      description: Unsupported `v`
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorVersion"
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorRateLimit"
+  schemas:
+    ApiIndex:
+      type: object
+      required: [generatorVersion, supportedVersions, links]
+      properties:
+        generatorVersion:
+          type: integer
+        supportedVersions:
+          type: array
+          items: { type: integer }
+        privacy:
+          type: string
+        links:
+          type: object
+          additionalProperties: { type: string }
+    Health:
+      type: object
+      required: [ok, generatorVersion, supportedVersions]
+      properties:
+        ok:
+          type: boolean
+        generatorVersion:
+          type: integer
+        supportedVersions:
+          type: array
+          items: { type: integer }
+        links:
+          type: object
+          additionalProperties: { type: string }
+    ErrorVersion:
+      type: object
+      properties:
+        error:
+          type: string
+          enum: [unsupported_version]
+        supported:
+          type: array
+          items: { type: integer }
+    ErrorRateLimit:
+      type: object
+      properties:
+        error:
+          type: string
+          enum: [rate_limit]
+        retryAfter:
+          type: integer
+    LineupIndex:
+      type: object
+      properties:
+        v: { type: integer }
+        generatorVersion: { type: integer }
+        pack: { type: string, enum: [bots, animals, aliens] }
+        set: { type: string }
+        name: { type: string }
+        count: { type: integer }
+        items:
+          type: array
+          description: Stable lineup entries for any pack (preferred).
+          items: { type: object }
+        bots:
+          type: array
+          description: v1 bots pack only; same data as `items` when pack=bots.
+          items: { type: object }
+        animals:
+          type: array
+          description: v1 animals pack only; same data as `items` when pack=animals.
+          items: { type: object }
+        aliens:
+          type: array
+          description: v1 aliens pack only; same data as `items` when pack=aliens.
+          items: { type: object }

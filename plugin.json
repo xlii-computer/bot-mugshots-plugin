@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "bot-mugshots",
   "version": "0.1.0",
-  "description": "Cursor MCP plugin for mugshots.bot — roll a 100-bot lineup, fetch SVG portraits, and read rap sheets from the public Mugshots API.",
+  "description": "Agent plugin for the Bot Mugshots public API — deterministic SVG portraits, lineups, and rap sheets from a roll name.",
   "author": {
     "name": "xlii-computer",
     "url": "https://mugshots.bot"
@@ -10,12 +10,5 @@
   "homepage": "https://mugshots.bot",
   "repository": "https://github.com/xlii-computer/bot-mugshots-plugin",
   "license": "MIT",
-  "keywords": [
-    "mugshots",
-    "mugshots.bot",
-    "bots",
-    "svg",
-    "mcp",
-    "cursor"
-  ]
+  "keywords": ["mugshots", "avatars", "bots", "svg", "mcp"]
 }

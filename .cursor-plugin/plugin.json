@@ -1,0 +1,13 @@
+{
+  "name": "bot-mugshots",
+  "version": "0.1.0",
+  "description": "Agent plugin for the Bot Mugshots public API — deterministic SVG portraits, lineups, and rap sheets from a roll name.",
+  "author": {
+    "name": "xlii-computer"
+  },
+  "homepage": "https://mugshots.bot",
+  "repository": "https://github.com/xlii-computer/bot-mugshots-plugin",
+  "license": "MIT",
+  "logo": "assets/logo.svg",
+  "keywords": ["mugshots", "avatars", "bots", "svg", "mcp"]
+}
